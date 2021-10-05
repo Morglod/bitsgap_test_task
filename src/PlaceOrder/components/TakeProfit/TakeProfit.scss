@@ -11,6 +11,24 @@
   
   &__content {
     padding: 10px 10px 0;
+
+    max-height: 100vh;
+    opacity: 1;
+    transition: max-height 0.5s, opacity 0.4s;
+
+    &_hidden {
+      max-height: 0vh;
+      opacity: 0;
+    }
+  }
+
+  &__add-button {
+    opacity: 1;
+    transition: opacity 0.1s;
+
+    &_hidden {
+      opacity: 0;
+    }
   }
 
   &__titles {

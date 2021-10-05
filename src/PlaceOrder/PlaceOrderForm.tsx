@@ -21,7 +21,8 @@ export const PlaceOrderForm = observer(() => {
     setPrice,
     setAmount,
     setTotal,
-    setOrderSide
+    setOrderSide,
+    validateForm,
   } = useStore();
 
   return (
@@ -67,6 +68,10 @@ export const PlaceOrderForm = observer(() => {
           color={activeOrderSide === "buy" ? "green" : "red"}
           type="submit"
           fullWidth
+          onClick={(evt) => {
+            evt.preventDefault();
+            validateForm();
+          }}
         >
           {activeOrderSide === "buy"
             ? `Buy ${BASE_CURRENCY}`

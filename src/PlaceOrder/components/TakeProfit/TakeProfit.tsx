@@ -7,8 +7,10 @@ import { AddCircle, Cancel } from "@material-ui/icons";
 import { Switch, TextButton, NumberInput } from "components";
 
 import { QUOTE_CURRENCY } from "../../constants";
-import { OrderSide } from "../../model";
+import { OrderSide, TakeProfitTarget } from "../../model";
 import "./TakeProfit.scss";
+import { useStore } from "PlaceOrder/context";
+import { observer } from "mobx-react";
 
 type Props = {
   orderSide: OrderSide;
@@ -17,24 +19,34 @@ type Props = {
 
 const b = block("take-profit");
 
-const TakeProfit = ({ orderSide }: Props) => {
+const TakeProfit = observer(({ orderSide }: Props) => {
+  const {
+    takeProfitFlag,
+    setTakeProfitFlag,
+    maxProfitTargets,
+    takeProfitTargets: takeProfitRows,
+    pushTakeProfitTarget,
+    removeTakeProfitTarget,
+    projectedProfit,
+    profitTarget_setAmount,
+    profitTarget_setPrice,
+    profitTarget_setProfit,
+  } = useStore();
+
   return (
     <div className={b()}>
       <div className={b("switch")}>
         <span>Take profit</span>
-        <Switch checked />
+        <Switch checked={takeProfitFlag} onChange={val => setTakeProfitFlag(val)} />
       </div>
-      <div className={b("content")}>
+      <div className={b("content", { hidden: !takeProfitFlag })}>
         {renderTitles()}
         {renderInputs()}
-        <TextButton className={b("add-button")}>
-          <AddCircle className={b("add-icon")} />
-          <span>Add profit target 2/5</span>
-        </TextButton>
+        {renderAddButton()}
         <div className={b("projected-profit")}>
           <span className={b("projected-profit-title")}>Projected profit</span>
           <span className={b("projected-profit-value")}>
-            <span>0</span>
+            <span>{projectedProfit.toFixed(2)}</span>
             <span className={b("projected-profit-currency")}>
               {QUOTE_CURRENCY}
             </span>
@@ -43,31 +55,56 @@ const TakeProfit = ({ orderSide }: Props) => {
       </div>
     </div>
   );
+
+  function renderAddButton() {
+    return (
+      <TextButton
+        className={b("add-button", { hidden: takeProfitRows.length === maxProfitTargets })}
+        onClick={() => pushTakeProfitTarget()}
+      >
+        <AddCircle className={b("add-icon")} />
+        <span>Add profit target {takeProfitRows.length}/{maxProfitTargets}</span>
+      </TextButton>
+    );
+  }
+
   function renderInputs() {
     return (
-      <div className={b("inputs")}>
-        <NumberInput
-          value={0}
-          decimalScale={2}
-          InputProps={{ endAdornment: "%" }}
-          variant="underlined"
-        />
-        <NumberInput
-          value={0}
-          decimalScale={2}
-          InputProps={{ endAdornment: QUOTE_CURRENCY }}
-          variant="underlined"
-        />
-        <NumberInput
-          value={0}
-          decimalScale={2}
-          InputProps={{ endAdornment: "%" }}
-          variant="underlined"
-        />
-        <div className={b("cancel-icon")}>
-          <Cancel />
-        </div>
-      </div>
+      <>
+        {takeProfitRows.map((target, i) => (
+          <div key={i} className={b("inputs")}>
+            <NumberInput
+              value={target.profitPercent * 100}
+              onBlur={newVal => profitTarget_setProfit(target, (newVal || 0) / 100)}
+              error={target.profitValidationError}
+              decimalScale={2}
+              InputProps={{ endAdornment: "%" }}
+              variant="underlined"
+            />
+            <NumberInput
+              value={target.targetPrice}
+              onBlur={newVal => profitTarget_setPrice(target, newVal || 0)}
+              error={target.targetPriceValidationError}
+              decimalScale={2}
+              InputProps={{ endAdornment: QUOTE_CURRENCY }}
+              variant="underlined"
+            />
+            <NumberInput
+              value={target.amountPercent * 100}
+              onBlur={newVal => profitTarget_setAmount(target, (newVal || 0) / 100)}
+              error={target.amountValidationError}
+              decimalScale={2}
+              InputProps={{ endAdornment: "%" }}
+              variant="underlined"
+            />
+            <div className={b("cancel-icon")}>
+              <Cancel
+                onClick={() => removeTakeProfitTarget(target)}
+              />
+            </div>
+          </div>
+        ))}
+      </>
     );
   }
 
@@ -80,6 +117,6 @@ const TakeProfit = ({ orderSide }: Props) => {
       </div>
     );
   }
-};
+});
 
 export { TakeProfit };
